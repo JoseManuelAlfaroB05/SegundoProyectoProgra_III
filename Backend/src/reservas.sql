@@ -1,8 +1,8 @@
-CREATE DATABASE sistemaReservas
+CREATE DATABASE IF NOT EXISTS sistemaReservas;
 
-USE sistemaReservas
+USE sistemareservas;
 
-CREATE TABLE Usuario (
+CREATE TABLE IF NOT EXISTS Usuario (
     id VARCHAR(20) PRIMARY KEY,
     clave VARCHAR(255) NOT NULL,
     rol VARCHAR(20) NOT NULL,
@@ -11,19 +11,19 @@ CREATE TABLE Usuario (
     CHECK (rol IN ('ADMINISTRADOR', 'FUNCIONARIO'))
 );
 
-CREATE TABLE Categoria (
+CREATE TABLE IF NOT EXISTS Categoria (
     id VARCHAR(20) PRIMARY KEY,
     descripcion VARCHAR(100) NOT NULL UNIQUE
 );
 
-CREATE TABLE Recurso (
+CREATE TABLE IF NOT EXISTS Recurso (
     id VARCHAR(20) PRIMARY KEY,
     categoria VARCHAR(20) NOT NULL,
     descripcion VARCHAR(100) NOT NULL,
     FOREIGN KEY (categoria) REFERENCES Categoria(id)
 );
 
-CREATE TABLE Reserva (
+CREATE TABLE IF NOT EXISTS Reserva (
     id VARCHAR(20) PRIMARY KEY,
     usuario VARCHAR(20) NOT NULL,
     actividad VARCHAR(100) NOT NULL,
@@ -34,7 +34,7 @@ CREATE TABLE Reserva (
     CHECK (horaInicio < horaFin)
 );
 
-CREATE TABLE ReservaRecurso (
+CREATE TABLE IF NOT EXISTS ReservaRecurso (
     reserva VARCHAR(20) NOT NULL,
     recurso VARCHAR(20) NOT NULL,
     PRIMARY KEY (reserva, recurso),

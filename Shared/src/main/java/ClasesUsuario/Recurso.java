@@ -37,6 +37,10 @@ public class Recurso {
         this.categoriaId = pRecurso != null ? pRecurso.getVarId() : null;
     }
 
+    public void setId(String pId) {
+        this.varId = pId;
+    }
+
     public void setDescripcion(String pDescripcion) {
         this.varDescripciom = pDescripcion;
     }
