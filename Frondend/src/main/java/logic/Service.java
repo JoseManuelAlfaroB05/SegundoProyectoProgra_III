@@ -12,7 +12,7 @@ import java.io.ObjectOutputStream;
 import java.net.Socket;
 import java.util.List;
 
-public class Proxi implements ServicioReservas {
+public class Service implements ServicioReservas {
 
     private final String host;
     private final int puerto;
@@ -21,7 +21,7 @@ public class Proxi implements ServicioReservas {
     private ObjectOutputStream salida;
     private ObjectInputStream entrada;
 
-    public Proxi(String host, int puerto) {
+    public Service(String host, int puerto) {
         this.host = host;
         this.puerto = puerto;
     }

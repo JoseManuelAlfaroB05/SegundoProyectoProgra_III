@@ -1,13 +1,17 @@
 package Server;
 
-import logic.Solicitud;
-import logic.Respuesta;
+import ClasesUsuario.CategoriaRecurso;
+import ClasesUsuario.Recurso;
+import ClasesUsuario.Reserva;
+import ClasesUsuario.User;
+import ClasesUsuario.Protocol;
 import logic.Service;
 
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.Socket;
+import java.util.List;
 
 public class Worker {
     private Socket s;
@@ -25,7 +29,8 @@ public class Worker {
             is = new ObjectInputStream(s.getInputStream());
             service = Service.instance();
         } catch (IOException ex) {
-            throw new RuntimeException("Error al crear el Worker: " + ex.getMessage(), ex);
+            throw new RuntimeException(
+                    "Error al crear el Worker: " + ex.getMessage(), ex);
         }
     }
 
@@ -50,7 +55,8 @@ public class Worker {
                 s.close();
             }
         } catch (IOException ex) {
-            System.err.println("Error al cerrar la conexión: " + ex.getMessage());
+            System.err.println(
+                    "Error al cerrar la conexión: " + ex.getMessage());
         }
 
         System.out.println("Conexión cerrada...");
@@ -61,24 +67,27 @@ public class Worker {
 
         try {
             while (continuar) {
-                Solicitud solicitud = (Solicitud) is.readObject();
+                int operacion = is.readInt();
 
-                Respuesta respuesta = procesarSolicitud(solicitud);
+                System.out.println("Operación: " + operacion);
 
-                os.writeObject(respuesta);
+                try {
+                    procesarOperacion(operacion);
+                } catch (Exception ex) {
+                    System.err.println(
+                            "Error procesando la operación "
+                                    + operacion + ": " + ex.getMessage());
+
+                    os.writeInt(Protocol.ERROR_ERROR);
+                }
+
                 os.flush();
                 os.reset();
-
-                if ("SALIR".equals(solicitud.getOperacion())) {
-                    break;
-                }
             }
         } catch (IOException ex) {
-            System.out.println("El cliente se desconectó.");
-        } catch (ClassNotFoundException ex) {
-            System.err.println("No se pudo reconocer el objeto recibido: " + ex.getMessage());
-        } catch (Exception ex) {
-            System.err.println("Error atendiendo al cliente: " + ex.getMessage());
+            if (continuar) {
+                System.out.println("El cliente se desconectó.");
+            }
         } finally {
             continuar = false;
 
@@ -87,7 +96,8 @@ public class Worker {
                     is.close();
                 }
             } catch (IOException ex) {
-                System.err.println("Error al cerrar la entrada: " + ex.getMessage());
+                System.err.println(
+                        "Error al cerrar la entrada: " + ex.getMessage());
             }
 
             try {
@@ -95,7 +105,8 @@ public class Worker {
                     os.close();
                 }
             } catch (IOException ex) {
-                System.err.println("Error al cerrar la salida: " + ex.getMessage());
+                System.err.println(
+                        "Error al cerrar la salida: " + ex.getMessage());
             }
 
             try {
@@ -103,28 +114,225 @@ public class Worker {
                     s.close();
                 }
             } catch (IOException ex) {
-                System.err.println("Error al cerrar el socket: " + ex.getMessage());
+                System.err.println(
+                        "Error al cerrar el socket: " + ex.getMessage());
             }
 
-            service.stop();
+            System.out.println("Conexión cerrada...");
         }
     }
 
-    private Respuesta procesarSolicitud(Solicitud solicitud) {
-        if (solicitud == null) {
-            return new Respuesta(false, null, "La solicitud recibida es nula.");
+    private void procesarOperacion(int operacion) throws Exception {
+        switch (operacion) {
+
+            // USUARIOS
+
+            case Protocol.USUARIO_FINDALL: {
+                List<User> usuarios = service.listarUsuarios();
+                os.writeInt(Protocol.ERROR_NO_ERROR);
+                os.writeObject(usuarios);
+                break;
+            }
+
+            case Protocol.USUARIO_READ: {
+                String id = (String) is.readObject();
+                User usuario = service.buscarUsuarioPorId(id);
+
+                if (usuario != null) {
+                    os.writeInt(Protocol.ERROR_NO_ERROR);
+                    os.writeObject(usuario);
+                } else {
+                    os.writeInt(Protocol.ERROR_ERROR);
+                }
+                break;
+            }
+
+            case Protocol.USUARIO_CREATE: {
+                User usuario = (User) is.readObject();
+                boolean resultado =
+                        service.guardarFuncionario(usuario);
+
+                escribirResultado(resultado);
+                break;
+            }
+
+            case Protocol.USUARIO_UPDATE: {
+                User usuario = (User) is.readObject();
+                boolean resultado =
+                        service.actualizarFuncionario(usuario);
+
+                escribirResultado(resultado);
+                break;
+            }
+
+            case Protocol.USUARIO_DELETE: {
+                String id = (String) is.readObject();
+                boolean resultado =
+                        service.eliminarFuncionario(id);
+
+                escribirResultado(resultado);
+                break;
+            }
+
+            case Protocol.USUARIO_ACTUALIZAR_CLAVE: {
+                String id = (String) is.readObject();
+                String claveNueva = (String) is.readObject();
+
+                boolean resultado =
+                        service.actualizarClave(id, claveNueva);
+
+                escribirResultado(resultado);
+                break;
+            }
+
+            case Protocol.USUARIO_BUSCAR_FUNCIONARIOS: {
+                String id = (String) is.readObject();
+                String nombre = (String) is.readObject();
+
+                List<User> funcionarios =
+                        service.buscarFuncionarios(id, nombre);
+
+                os.writeInt(Protocol.ERROR_NO_ERROR);
+                os.writeObject(funcionarios);
+                break;
+            }
+
+            // CATEGORÍAS
+
+            case Protocol.CATEGORIA_FINDALL: {
+                List<CategoriaRecurso> categorias =
+                        service.listarCategorias();
+
+                os.writeInt(Protocol.ERROR_NO_ERROR);
+                os.writeObject(categorias);
+                break;
+            }
+
+            case Protocol.CATEGORIA_READ: {
+                String id = (String) is.readObject();
+
+                CategoriaRecurso categoria =
+                        service.buscarCategoriaPorId(id);
+
+                if (categoria != null) {
+                    os.writeInt(Protocol.ERROR_NO_ERROR);
+                    os.writeObject(categoria);
+                } else {
+                    os.writeInt(Protocol.ERROR_ERROR);
+                }
+                break;
+            }
+
+            case Protocol.CATEGORIA_CREATE: {
+                CategoriaRecurso categoria =
+                        (CategoriaRecurso) is.readObject();
+
+                boolean resultado =
+                        service.guardarCategoria(categoria);
+
+                escribirResultado(resultado);
+                break;
+            }
+
+            case Protocol.CATEGORIA_DELETE: {
+                String id = (String) is.readObject();
+
+                boolean resultado =
+                        service.eliminarCategoria(id);
+
+                escribirResultado(resultado);
+                break;
+            }
+
+            // RECURSOS
+
+            case Protocol.RECURSO_FINDALL: {
+                List<Recurso> recursos = service.listarRecursos();
+
+                os.writeInt(Protocol.ERROR_NO_ERROR);
+                os.writeObject(recursos);
+                break;
+            }
+
+            case Protocol.RECURSO_READ: {
+                String id = (String) is.readObject();
+
+                Recurso recurso = service.buscarRecursoPorId(id);
+
+                if (recurso != null) {
+                    os.writeInt(Protocol.ERROR_NO_ERROR);
+                    os.writeObject(recurso);
+                } else {
+                    os.writeInt(Protocol.ERROR_ERROR);
+                }
+                break;
+            }
+
+            // RESERVAS
+
+            case Protocol.RESERVA_FINDALL: {
+                List<Reserva> reservas = service.listarReservas();
+
+                os.writeInt(Protocol.ERROR_NO_ERROR);
+                os.writeObject(reservas);
+                break;
+            }
+
+            case Protocol.RESERVA_CREATE: {
+                Reserva reserva = (Reserva) is.readObject();
+
+                boolean resultado =
+                        service.guardarReserva(reserva);
+
+                escribirResultado(resultado);
+                break;
+            }
+
+            case Protocol.RESERVA_DELETE: {
+                String id = (String) is.readObject();
+
+                boolean resultado =
+                        service.eliminarReserva(id);
+
+                escribirResultado(resultado);
+                break;
+            }
+
+            case Protocol.RESERVA_DELETE_POR_RECURSOS: {
+                @SuppressWarnings("unchecked")
+                List<String> idsRecursos =
+                        (List<String>) is.readObject();
+
+                boolean resultado =
+                        service.eliminarReservasPorRecursos(idsRecursos);
+
+                escribirResultado(resultado);
+                break;
+            }
+
+            // CERRAR CONEXIÓN
+
+            case Protocol.DISCONNECT: {
+                continuar = false;
+                break;
+            }
+
+            default: {
+                System.err.println(
+                        "Operación desconocida: " + operacion);
+
+                os.writeInt(Protocol.ERROR_ERROR);
+                break;
+            }
         }
+    }
 
-        String operacion = solicitud.getOperacion();
-
-        if ("SALIR".equals(operacion)) {
-            return new Respuesta(true, "Conexión finalizada.", null);
+    private void escribirResultado(boolean resultado)
+            throws IOException {
+        if (resultado) {
+            os.writeInt(Protocol.ERROR_NO_ERROR);
+        } else {
+            os.writeInt(Protocol.ERROR_ERROR);
         }
-
-        return new Respuesta(
-                false,
-                null,
-                "Operación todavía no implementada: " + operacion
-        );
     }
 }
