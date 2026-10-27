@@ -1,10 +1,14 @@
 package ClasesUsuario;
 
+import java.io.Serializable;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.ArrayList;
 
-public class Reserva {
+public class Reserva implements Serializable {
+
+    private static final long serialVersionUID = 1L;
+
     private String id;
     private User usuario;
     private String usuarioId;
@@ -20,7 +24,9 @@ public class Reserva {
         recursosIds = new ArrayList<>();
     }
 
-    public Reserva(String id, User usuario, String actividad, LocalDate fecha, LocalTime horaInicio, LocalTime horaFin, ArrayList<Recurso> recursos) {
+    public Reserva(String id, User usuario, String actividad,
+                   LocalDate fecha, LocalTime horaInicio,
+                   LocalTime horaFin, ArrayList<Recurso> recursos) {
         this.id = id;
         this.usuario = usuario;
         this.usuarioId = usuario != null ? usuario.getVarId() : null;
@@ -30,6 +36,7 @@ public class Reserva {
         this.horaFin = horaFin;
         this.recursos = recursos;
         this.recursosIds = new ArrayList<>();
+
         if (recursos != null) {
             for (Recurso recurso : recursos) {
                 this.recursosIds.add(recurso.getId());
@@ -81,6 +88,7 @@ public class Reserva {
     public void setRecursos(ArrayList<Recurso> recursos) {
         this.recursos = recursos;
         this.recursosIds = new ArrayList<>();
+
         if (recursos != null) {
             for (Recurso recurso : recursos) {
                 this.recursosIds.add(recurso.getId());

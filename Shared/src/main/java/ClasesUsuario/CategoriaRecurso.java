@@ -1,6 +1,11 @@
 package ClasesUsuario;
 
-public class CategoriaRecurso {
+import java.io.Serializable;
+
+public class CategoriaRecurso implements Serializable {
+
+    private static final long serialVersionUID = 1L;
+
     private String varId;
     private String varDescripcion;
 

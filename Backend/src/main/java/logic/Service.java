@@ -135,4 +135,19 @@ public class Service implements ServicioReservas {
     public boolean eliminarReservasPorRecursos(List<String> idsRecursos) {
         return reservaDao.eliminarPorRecursos(idsRecursos);
     }
+
+    @Override
+    public boolean guardarRecurso(Recurso recurso) {
+        return recursoDao.guardar(recurso);
+    }
+
+    @Override
+    public boolean actualizarRecurso(Recurso recurso) {
+        return recursoDao.actualizar(recurso);
+    }
+
+    @Override
+    public boolean eliminarRecurso(String id) {
+        return recursoDao.eliminar(id);
+    }
 }

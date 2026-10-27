@@ -1,8 +1,11 @@
 package ClasesUsuario;
 
+import java.io.Serializable;
 
+public class User implements Serializable {
 
-public class User {
+    private static final long serialVersionUID = 1L;
+
     private String varId;
     private String varClave;
     private Rol varRol;

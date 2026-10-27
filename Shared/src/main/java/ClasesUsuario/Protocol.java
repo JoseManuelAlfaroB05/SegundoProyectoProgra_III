@@ -22,6 +22,9 @@ public class Protocol {
     // RECURSOS
     public static final int RECURSO_FINDALL = 301;
     public static final int RECURSO_READ = 302;
+    public static final int RECURSO_CREATE = 303;
+    public static final int RECURSO_UPDATE = 304;
+    public static final int RECURSO_DELETE = 305;
 
     // RESERVAS
     public static final int RESERVA_FINDALL = 401;

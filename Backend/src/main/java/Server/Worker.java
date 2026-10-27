@@ -21,13 +21,16 @@ public class Worker {
     private Thread hilo;
     private final Service service;
 
-    public Worker(Socket s) {
+    public Worker(Socket s, Service service) {
         try {
             this.s = s;
+            this.service = service;
+
             os = new ObjectOutputStream(s.getOutputStream());
             os.flush();
+
             is = new ObjectInputStream(s.getInputStream());
-            service = Service.instance();
+
         } catch (IOException ex) {
             throw new RuntimeException(
                     "Error al crear el Worker: " + ex.getMessage(), ex);
@@ -73,21 +76,35 @@ public class Worker {
 
                 try {
                     procesarOperacion(operacion);
-                } catch (Exception ex) {
+                    os.flush();
+                    os.reset();
+
+                } catch (IOException ex) {
                     System.err.println(
-                            "Error procesando la operación "
+                            "Error de comunicación al procesar la operación "
                                     + operacion + ": " + ex.getMessage());
 
-                    os.writeInt(Protocol.ERROR_ERROR);
-                }
+                    continuar = false;
 
-                os.flush();
-                os.reset();
+                } catch (Exception ex) {
+                    System.err.println(
+                            "Error al procesar la operación "
+                                    + operacion + ": " + ex.getMessage());
+
+                    try {
+                        os.writeInt(Protocol.ERROR_ERROR);
+                        os.flush();
+                    } catch (IOException errorComunicacion) {
+                        continuar = false;
+                    }
+                }
             }
+
         } catch (IOException ex) {
             if (continuar) {
                 System.out.println("El cliente se desconectó.");
             }
+
         } finally {
             continuar = false;
 
@@ -268,6 +285,26 @@ public class Worker {
                 break;
             }
 
+            case Protocol.RECURSO_CREATE: {
+                Recurso recurso = (Recurso) is.readObject();
+                boolean resultado = service.guardarRecurso(recurso);
+                escribirResultado(resultado);
+                break;
+            }
+
+            case Protocol.RECURSO_UPDATE: {
+                Recurso recurso = (Recurso) is.readObject();
+                boolean resultado = service.actualizarRecurso(recurso);
+                escribirResultado(resultado);
+                break;
+            }
+
+            case Protocol.RECURSO_DELETE: {
+                String id = (String) is.readObject();
+                boolean resultado = service.eliminarRecurso(id);
+                escribirResultado(resultado);
+                break;
+            }
             // RESERVAS
 
             case Protocol.RESERVA_FINDALL: {

@@ -21,6 +21,9 @@ public interface ServicioReservas {
     // Recursos
     List<Recurso> listarRecursos();
     Recurso buscarRecursoPorId(String id) throws Exception;
+    boolean guardarRecurso(Recurso recurso);
+    boolean actualizarRecurso(Recurso recurso);
+    boolean eliminarRecurso(String id);
 
     // Reservas
     List<Reserva> listarReservas();
