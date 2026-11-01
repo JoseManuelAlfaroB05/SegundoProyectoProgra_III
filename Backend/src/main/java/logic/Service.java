@@ -43,7 +43,7 @@ public class Service implements ServicioReservas {
         }
     }
 
-    // =============== USUARIOS Y FUNCIONARIOS ===============
+    // USUARIOS Y FUNCIONARIOS
 
     @Override
     public List<User> listarUsuarios() {
@@ -80,7 +80,7 @@ public class Service implements ServicioReservas {
         return userDao.actualizarClave(id, claveNueva);
     }
 
-    // =============== CATEGORÍAS ===============
+    // CATEGORÍAS
 
     @Override
     public List<CategoriaRecurso> listarCategorias() {
@@ -102,7 +102,7 @@ public class Service implements ServicioReservas {
         return categoriaDao.eliminarCategoria(id);
     }
 
-    // =============== RECURSOS ===============
+    // RECURSOS
 
     @Override
     public List<Recurso> listarRecursos() {
@@ -114,7 +114,7 @@ public class Service implements ServicioReservas {
         return recursoDao.read(id);
     }
 
-    // =============== RESERVAS ===============
+    // RESERVAS
 
     @Override
     public List<Reserva> listarReservas() {

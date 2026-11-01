@@ -353,4 +353,11 @@ public class FuncionariosView extends JPanel implements PropertyChangeListener {
                 JOptionPane.ERROR_MESSAGE
         );
     }
+    public void recargarDatos() {
+        try {
+            controller.buscar("", "");
+        } catch (RuntimeException ex) {
+            mostrarError("No se pudieron recargar los funcionarios.", ex);
+        }
+    }
 }

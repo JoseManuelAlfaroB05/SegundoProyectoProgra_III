@@ -44,9 +44,7 @@ public class Database {
 
             if (driver == null || servidor == null || puerto == null
                     || baseDatos == null || usuario == null || clave == null) {
-                throw new IllegalStateException(
-                        "Faltan propiedades en database.properties"
-                );
+                throw new IllegalStateException("Faltan propiedades en database.properties");
             }
 
             Class.forName(driver);

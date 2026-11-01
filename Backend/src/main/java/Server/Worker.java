@@ -32,8 +32,7 @@ public class Worker {
             is = new ObjectInputStream(s.getInputStream());
 
         } catch (IOException ex) {
-            throw new RuntimeException(
-                    "Error al crear el Worker: " + ex.getMessage(), ex);
+            throw new RuntimeException("Error al crear el Worker: " + ex.getMessage(), ex);
         }
     }
 
@@ -46,7 +45,6 @@ public class Worker {
                 listen();
             }
         });
-
         hilo.start();
     }
 

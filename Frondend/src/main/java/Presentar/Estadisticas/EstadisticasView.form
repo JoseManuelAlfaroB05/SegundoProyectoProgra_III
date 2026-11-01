@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<form xmlns="http://www.intellij.com/uidesigner/form/" version="1" bind-to-class="Presentar.Estadisticas.EstadisticasView">
+  <grid id="estadisticasViewPanel" layout-manager="GridLayoutManager" row-count="1" column-count="2" same-size-horizontally="true" same-size-vertically="false" hgap="14" vgap="0">
+    <margin top="16" left="18" bottom="16" right="18"/>
+    <constraints><xy x="20" y="20" width="1300" height="800"/></constraints>
+    <properties/>
+    <border type="none"/>
+    <children>
+      <grid id="recursosPanel" layout-manager="GridLayoutManager" row-count="3" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="8" vgap="8">
+        <margin top="8" left="8" bottom="8" right="8"/>
+        <constraints><grid row="0" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false"/></constraints>
+        <properties/><border type="line"/>
+        <children>
+          <component id="recursosDesdeComponente" class="com.github.lgooddatepicker.components.DatePicker" binding="recursosDesde"><constraints><grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/></constraints><properties/></component>
+          <scrollpane id="tablaRecursosScroll"><constraints><grid row="1" column="0" row-span="1" col-span="1" vsize-policy="7" hsize-policy="7" anchor="0" fill="3" indent="0" use-parent-layout="false"/></constraints><properties/><border type="none"/><children><component id="tablaRecursosComponente" class="javax.swing.JTable" binding="tablaRecursos"><constraints/><properties><model><column name="Categoría"/><column name="Cantidad"/></model></properties></component></children></scrollpane>
+          <component id="graficoRecursosComponente" class="javax.swing.JPanel" binding="graficoRecursos"><constraints><grid row="2" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false"/></constraints><properties/></component>
+        </children>
+      </grid>
+      <grid id="actividadesPanel" layout-manager="GridLayoutManager" row-count="3" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="8" vgap="8">
+        <margin top="8" left="8" bottom="8" right="8"/>
+        <constraints><grid row="0" column="1" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false"/></constraints>
+        <properties/><border type="line"/>
+        <children>
+          <component id="actividadesDesdeComponente" class="com.github.lgooddatepicker.components.DatePicker" binding="actividadesDesde"><constraints><grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/></constraints><properties/></component>
+          <scrollpane id="tablaActividadesScroll"><constraints><grid row="1" column="0" row-span="1" col-span="1" vsize-policy="7" hsize-policy="7" anchor="0" fill="3" indent="0" use-parent-layout="false"/></constraints><properties/><border type="none"/><children><component id="tablaActividadesComponente" class="javax.swing.JTable" binding="tablaActividades"><constraints/><properties><model><column name="Semana"/><column name="Cantidad"/></model></properties></component></children></scrollpane>
+          <component id="graficoActividadesComponente" class="javax.swing.JPanel" binding="graficoActividades"><constraints><grid row="2" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false"/></constraints><properties/></component>
+        </children>
+      </grid>
+    </children>
+  </grid>
+</form>

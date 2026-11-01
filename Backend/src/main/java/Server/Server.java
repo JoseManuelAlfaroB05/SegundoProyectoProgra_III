@@ -17,19 +17,15 @@ public class Server {
             serverSocket = new ServerSocket(Protocol.PORT);
             continuar = true;
 
-            // Una única instancia del Service para los clientes.
             service = Service.instance();
 
             System.out.println(
-                    "Servidor iniciado en el puerto "
-                            + Protocol.PORT + "...");
+                    "Servidor iniciado en el puerto " + Protocol.PORT + "...");
 
             while (continuar) {
                 Socket socket = serverSocket.accept();
 
-                System.out.println(
-                        "Cliente conectado: "
-                                + socket.getInetAddress());
+                System.out.println("Cliente conectado: "+ socket.getInetAddress());
 
                 Worker worker = new Worker(socket, service);
                 worker.start();
@@ -37,8 +33,7 @@ public class Server {
 
         } catch (IOException ex) {
             if (continuar) {
-                System.err.println(
-                        "Error en el servidor: " + ex.getMessage());
+                System.err.println("Error en el servidor: " + ex.getMessage());
             }
         } finally {
             continuar = false;
@@ -48,9 +43,7 @@ public class Server {
                     serverSocket.close();
                 }
             } catch (IOException ex) {
-                System.err.println(
-                        "Error al cerrar el servidor: "
-                                + ex.getMessage());
+                System.err.println("Error al cerrar el servidor: "+ ex.getMessage());
             }
         }
     }
