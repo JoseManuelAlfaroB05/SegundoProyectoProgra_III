@@ -11,7 +11,6 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.Socket;
-import java.util.ArrayList;
 import java.util.List;
 
 public class Service implements ServicioReservas {
@@ -177,9 +176,7 @@ public class Service implements ServicioReservas {
         } catch (IOException | ClassNotFoundException ex) {
             throw new IllegalStateException(
                     "Error al buscar el usuario en el Backend: "
-                            + ex.getMessage(),
-                    ex
-            );
+                            + ex.getMessage(), ex);
         }
     }
 
@@ -265,34 +262,6 @@ public class Service implements ServicioReservas {
                 Protocol.RECURSO_READ, id);
     }
 
-    // =============== RESERVAS ===============
-
-    @Override
-    public List<Reserva> listarReservas() {
-        return solicitarLista(Protocol.RESERVA_FINDALL);
-    }
-
-    @Override
-    public boolean guardarReserva(Reserva reserva) {
-        return ejecutarBooleano(
-                Protocol.RESERVA_CREATE, reserva);
-    }
-
-    @Override
-    public boolean eliminarReserva(String id) {
-        return ejecutarBooleano(
-                Protocol.RESERVA_DELETE, id);
-    }
-
-    @Override
-    public boolean eliminarReservasPorRecursos(
-            List<String> idsRecursos) {
-
-        return ejecutarBooleano(
-                Protocol.RESERVA_DELETE_POR_RECURSOS,
-                idsRecursos);
-    }
-
     @Override
     public boolean guardarRecurso(Recurso recurso) {
         return ejecutarBooleano(
@@ -309,5 +278,43 @@ public class Service implements ServicioReservas {
     public boolean eliminarRecurso(String id) {
         return ejecutarBooleano(
                 Protocol.RECURSO_DELETE, id);
+    }
+
+    // =============== RESERVAS ===============
+
+    @Override
+    public List<Reserva> listarReservas() {
+        return solicitarLista(Protocol.RESERVA_FINDALL);
+    }
+
+    @Override
+    public boolean guardarReserva(Reserva reserva) {
+        return ejecutarBooleano(
+                Protocol.RESERVA_CREATE, reserva);
+    }
+
+    @Override
+    public boolean actualizarReserva(Reserva reserva) {
+        return ejecutarBooleano(
+                Protocol.RESERVA_UPDATE, reserva);
+    }
+
+    @Override
+    public boolean eliminarReserva(String id) {
+        return ejecutarBooleano(
+                Protocol.RESERVA_DELETE, id);
+    }
+
+    @Override
+    public boolean eliminarReservasPorRecursos(
+            List<String> idsRecursos) {
+
+        return ejecutarBooleano(
+                Protocol.RESERVA_DELETE_POR_RECURSOS,
+                idsRecursos);
+    }
+    @Override
+    public boolean actualizarCategoria(CategoriaRecurso categoria) {
+        return ejecutarBooleano(Protocol.CATEGORIA_UPDATE, categoria);
     }
 }

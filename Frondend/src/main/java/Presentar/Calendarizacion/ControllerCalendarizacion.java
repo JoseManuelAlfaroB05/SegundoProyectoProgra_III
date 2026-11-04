@@ -1,3 +1,4 @@
+
 package Presentar.Calendarizacion;
 
 import ClasesUsuario.CategoriaRecurso;
@@ -11,6 +12,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class ControllerCalendarizacion {
+
     private final ServicioReservas servicio;
     private final ModelCalendarizacion model;
 
@@ -38,7 +40,7 @@ public class ControllerCalendarizacion {
         model.setFecha(fecha);
         model.setCategoria(categoriaRecurso);
 
-        if (fecha == null || categoriaRecurso == null) {
+        if (fecha == null) {
             model.setReservas(new ArrayList<>());
             return;
         }
@@ -51,9 +53,8 @@ public class ControllerCalendarizacion {
             return;
         }
 
-        String categoriaId = categoriaRecurso.getVarId();
-
         for (Reserva reserva : todasLasReservas) {
+
             if (reserva == null || reserva.getFecha() == null) {
                 continue;
             }
@@ -62,7 +63,14 @@ public class ControllerCalendarizacion {
                 continue;
             }
 
-            if (contieneCategoria(reserva, categoriaId)) {
+            // Si no se seleccionó una categoría,
+            // se incluyen todas las reservas de ese día.
+            if (categoriaRecurso == null) {
+                reservasFiltradas.add(reserva);
+            } else if (contieneCategoria(
+                    reserva,
+                    categoriaRecurso.getVarId())) {
+
                 reservasFiltradas.add(reserva);
             }
         }
@@ -70,17 +78,23 @@ public class ControllerCalendarizacion {
         model.setReservas(reservasFiltradas);
     }
 
-    private boolean contieneCategoria(Reserva reserva, String categoriaId) {
+    private boolean contieneCategoria(
+            Reserva reserva,
+            String categoriaId) {
+
         if (reserva.getRecursos() == null) {
             return false;
         }
 
         for (Recurso recurso : reserva.getRecursos()) {
+
             if (recurso == null) {
                 continue;
             }
 
-            if (categoriaId.equalsIgnoreCase(recurso.getCategoriaId())) {
+            if (categoriaId.equalsIgnoreCase(
+                    recurso.getCategoriaId())) {
+
                 return true;
             }
         }
@@ -90,6 +104,7 @@ public class ControllerCalendarizacion {
 
     public void generarPDF() throws Exception {
         throw new UnsupportedOperationException(
-                "La generación de PDF de Calendarización todavía no está adaptada al Proyecto 2.");
+                "La generación de PDF de Calendarización todavía no está adaptada al Proyecto 2."
+        );
     }
 }

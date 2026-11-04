@@ -1,3 +1,4 @@
+
 package Presentar.Categoria;
 
 import ClasesUsuario.CategoriaRecurso;
@@ -54,14 +55,17 @@ public class CategoriaView extends JPanel implements PropertyChangeListener {
                 controller.limpiar();
                 textFieldBusqueda.setText("");
                 tableCategorias.clearSelection();
+
+                textFieldId.setEditable(true);
+                textFieldId.setText("");
+                textFieldDescripcion.setText("");
             }
         });
 
         buttonBuscar.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                String descripcion =
-                        textFieldBusqueda.getText().trim();
+                String descripcion = textFieldBusqueda.getText().trim();
 
                 if (descripcion.isEmpty()) {
                     controller.limpiar();
@@ -107,8 +111,7 @@ public class CategoriaView extends JPanel implements PropertyChangeListener {
                 );
 
                 if (respuesta == JOptionPane.YES_OPTION) {
-                    boolean eliminado =
-                            controller.eliminarCategoria(id);
+                    boolean eliminado = controller.eliminarCategoria(id);
 
                     if (eliminado) {
                         JOptionPane.showMessageDialog(
@@ -120,6 +123,7 @@ public class CategoriaView extends JPanel implements PropertyChangeListener {
 
                         textFieldBusqueda.setText("");
                         tableCategorias.clearSelection();
+                        textFieldId.setEditable(true);
                     } else {
                         JOptionPane.showMessageDialog(
                                 CategoriaView.this,
@@ -137,39 +141,52 @@ public class CategoriaView extends JPanel implements PropertyChangeListener {
             @Override
             public void actionPerformed(ActionEvent e) {
                 String id = textFieldId.getText().trim();
-                String descripcion =
-                        textFieldDescripcion.getText().trim();
+                String descripcion = textFieldDescripcion.getText().trim();
 
                 if (id.isEmpty() || descripcion.isEmpty()) {
                     JOptionPane.showMessageDialog(
                             CategoriaView.this,
                             "Debe completar todos los campos.",
-                            "Agregar categoría",
+                            "Categoría",
                             JOptionPane.WARNING_MESSAGE
                     );
                     return;
                 }
 
-                boolean agregada =
-                        controller.agregarCategoria(id, descripcion);
+                boolean resultado;
 
-                if (agregada) {
-                    JOptionPane.showMessageDialog(
-                            CategoriaView.this,
-                            "Categoría agregada correctamente.",
-                            "Agregar categoría",
-                            JOptionPane.INFORMATION_MESSAGE
-                    );
+                if (!textFieldId.isEditable()) {
+                    resultado = controller.actualizarCategoria(id, descripcion);
 
+                    if (resultado) {
+                        JOptionPane.showMessageDialog(
+                                CategoriaView.this,
+                                "Categoría actualizada correctamente.",
+                                "Editar categoría",
+                                JOptionPane.INFORMATION_MESSAGE
+                        );
+                    }
+                } else {
+                    resultado = controller.agregarCategoria(id, descripcion);
+
+                    if (resultado) {
+                        JOptionPane.showMessageDialog(
+                                CategoriaView.this,
+                                "Categoría agregada correctamente.",
+                                "Agregar categoría",
+                                JOptionPane.INFORMATION_MESSAGE
+                        );
+                    }
+                }
+
+                if (resultado) {
                     controller.limpiar();
                     textFieldBusqueda.setText("");
                     tableCategorias.clearSelection();
                 } else {
                     JOptionPane.showMessageDialog(
                             CategoriaView.this,
-                            "No se pudo agregar la categoría. "
-                                    + "Verifique que el ID no esté repetido "
-                                    + "y que los datos sean válidos.",
+                            "No se pudo guardar la categoría. Verifique los datos.",
                             "Error",
                             JOptionPane.ERROR_MESSAGE
                     );
@@ -220,9 +237,13 @@ public class CategoriaView extends JPanel implements PropertyChangeListener {
 
             if (categoria != null) {
                 textFieldId.setText(categoria.getVarId());
-                textFieldDescripcion.setText(
-                        categoria.getDescripcion()
-                );
+                textFieldDescripcion.setText(categoria.getDescripcion());
+
+                boolean estaEditando =
+                        categoria.getVarId() != null
+                                && !categoria.getVarId().isEmpty();
+
+                textFieldId.setEditable(!estaEditando);
             }
         }
     }

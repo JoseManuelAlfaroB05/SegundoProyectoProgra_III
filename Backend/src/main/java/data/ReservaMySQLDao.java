@@ -19,6 +19,7 @@ import java.util.List;
 import java.util.Map;
 
 public class ReservaMySQLDao {
+
     private final Database db;
 
     public ReservaMySQLDao() {
@@ -190,6 +191,129 @@ public class ReservaMySQLDao {
         }
     }
 
+    public boolean actualizar(Reserva reserva) {
+        String sqlReserva = """
+                UPDATE Reserva
+                SET usuario = ?,
+                    actividad = ?,
+                    fecha = ?,
+                    horaInicio = ?,
+                    horaFin = ?
+                WHERE id = ?
+                """;
+
+        String sqlEliminarRecursos = """
+                DELETE FROM ReservaRecurso
+                WHERE reserva = ?
+                """;
+
+        String sqlInsertarRecurso = """
+                INSERT INTO ReservaRecurso (reserva, recurso)
+                VALUES (?, ?)
+                """;
+
+        String sqlExisteReserva = """
+                SELECT id
+                FROM Reserva
+                WHERE id = ?
+                """;
+
+        Connection conexion = null;
+        boolean autoCommitOriginal = true;
+
+        try {
+            conexion = db.getConnection();
+            autoCommitOriginal = conexion.getAutoCommit();
+            conexion.setAutoCommit(false);
+
+            try {
+                // Actualizar los datos principales de la reserva.
+                int filasActualizadas;
+
+                try (PreparedStatement stm =
+                             conexion.prepareStatement(sqlReserva)) {
+
+                    stm.setString(1, reserva.getUsuarioId());
+                    stm.setString(2, reserva.getActividad());
+                    stm.setDate(3, Date.valueOf(reserva.getFecha()));
+                    stm.setTime(4, Time.valueOf(reserva.getHoraInicio()));
+                    stm.setTime(5, Time.valueOf(reserva.getHoraFin()));
+                    stm.setString(6, reserva.getId());
+
+                    filasActualizadas = stm.executeUpdate();
+                }
+
+                // Si no se modificaron filas, comprobar que la reserva exista.
+                if (filasActualizadas == 0) {
+                    try (PreparedStatement stm =
+                                 conexion.prepareStatement(sqlExisteReserva)) {
+
+                        stm.setString(1, reserva.getId());
+
+                        try (ResultSet rs = stm.executeQuery()) {
+                            if (!rs.next()) {
+                                conexion.rollback();
+                                return false;
+                            }
+                        }
+                    }
+                }
+
+                // Eliminar las asociaciones anteriores.
+                try (PreparedStatement stm =
+                             conexion.prepareStatement(sqlEliminarRecursos)) {
+
+                    stm.setString(1, reserva.getId());
+                    stm.executeUpdate();
+                }
+
+                // Insertar las nuevas asociaciones de recursos.
+                List<String> recursosIds = reserva.getRecursosIds();
+
+                if (recursosIds != null && !recursosIds.isEmpty()) {
+                    try (PreparedStatement stm =
+                                 conexion.prepareStatement(sqlInsertarRecurso)) {
+
+                        for (String recursoId : recursosIds) {
+                            stm.setString(1, reserva.getId());
+                            stm.setString(2, recursoId);
+                            stm.addBatch();
+                        }
+
+                        stm.executeBatch();
+                    }
+                }
+
+                conexion.commit();
+                return true;
+
+            } catch (SQLException e) {
+                try {
+                    conexion.rollback();
+                } catch (SQLException errorRollback) {
+                    e.addSuppressed(errorRollback);
+                }
+
+                System.err.println(
+                        "Error al actualizar reserva: " + e.getMessage()
+                );
+
+                return false;
+
+            } finally {
+                conexion.setAutoCommit(autoCommitOriginal);
+            }
+
+        } catch (SQLException e) {
+            System.err.println(
+                    "Error de conexión al actualizar reserva: "
+                            + e.getMessage()
+            );
+
+            return false;
+        }
+    }
+
     public boolean eliminar(String idReserva) {
         String sql = "DELETE FROM Reserva WHERE id = ?";
 
@@ -222,6 +346,7 @@ public class ReservaMySQLDao {
             if (i > 0) {
                 sql.append(", ");
             }
+
             sql.append("?");
         }
 

@@ -223,6 +223,17 @@ public class Worker {
                 break;
             }
 
+            case Protocol.CATEGORIA_UPDATE: {
+                CategoriaRecurso categoria =
+                        (CategoriaRecurso) is.readObject();
+
+                boolean resultado =
+                        service.actualizarCategoria(categoria);
+
+                escribirResultado(resultado);
+                break;
+            }
+
             case Protocol.CATEGORIA_READ: {
                 String id = (String) is.readObject();
 
@@ -310,6 +321,15 @@ public class Worker {
 
                 os.writeInt(Protocol.ERROR_NO_ERROR);
                 os.writeObject(reservas);
+                break;
+            }
+
+            case Protocol.RESERVA_UPDATE: {
+                Reserva reserva = (Reserva) is.readObject();
+
+                boolean resultado = service.actualizarReserva(reserva);
+
+                escribirResultado(resultado);
                 break;
             }
 

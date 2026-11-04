@@ -3,7 +3,7 @@ package ClasesUsuario;
 import java.util.List;
 
 public interface ServicioReservas {
-    // Usuarios y funcionarios
+    // USUARIOS
     List<User> listarUsuarios();
     User buscarUsuarioPorId(String id);
     List<User> buscarFuncionarios(String id, String nombre);
@@ -12,22 +12,24 @@ public interface ServicioReservas {
     boolean eliminarFuncionario(String id);
     boolean actualizarClave(String id, String claveNueva);
 
-    // Categorías
+    // CATEGORÍAS
     List<CategoriaRecurso> listarCategorias();
     CategoriaRecurso buscarCategoriaPorId(String id);
     boolean guardarCategoria(CategoriaRecurso categoria);
+    boolean actualizarCategoria(CategoriaRecurso categoria);
     boolean eliminarCategoria(String id);
 
-    // Recursos
+    // RECURSOS
     List<Recurso> listarRecursos();
     Recurso buscarRecursoPorId(String id) throws Exception;
     boolean guardarRecurso(Recurso recurso);
     boolean actualizarRecurso(Recurso recurso);
     boolean eliminarRecurso(String id);
 
-    // Reservas
+    // RESERVAS
     List<Reserva> listarReservas();
     boolean guardarReserva(Reserva reserva);
+    boolean actualizarReserva(Reserva reserva);
     boolean eliminarReserva(String id);
     boolean eliminarReservasPorRecursos(List<String> idsRecursos);
 }

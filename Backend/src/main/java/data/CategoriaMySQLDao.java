@@ -72,6 +72,31 @@ public class CategoriaMySQLDao {
         }
     }
 
+    public boolean actualizar(CategoriaRecurso categoria) {
+        if (categoria == null
+                || categoria.getVarId() == null
+                || categoria.getDescripcion() == null) {
+            return false;
+        }
+
+        String sql = """
+            UPDATE Categoria
+            SET descripcion = ?
+            WHERE id = ?
+            """;
+
+        try (PreparedStatement stm = db.prepareStatement(sql)) {
+            stm.setString(1, categoria.getDescripcion());
+            stm.setString(2, categoria.getVarId());
+
+            return db.executeUpdate(stm) == 1;
+
+        } catch (SQLException e) {
+            System.err.println("Error al actualizar categoría: " + e.getMessage());
+            return false;
+        }
+    }
+
     public CategoriaRecurso buscarPorId(String id) {
         String sql = """
                 SELECT id, descripcion

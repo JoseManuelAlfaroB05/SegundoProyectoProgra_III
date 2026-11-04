@@ -21,7 +21,7 @@ public class Service implements ServicioReservas {
 
     private final UserMySQLDao userDao;
     private final CategoriaMySQLDao categoriaDao;
-        private final RecursoDAO recursoDao;
+    private final RecursoDAO recursoDao;
     private final ReservaMySQLDao reservaDao;
 
     private Service() {
@@ -114,28 +114,6 @@ public class Service implements ServicioReservas {
         return recursoDao.read(id);
     }
 
-    // RESERVAS
-
-    @Override
-    public List<Reserva> listarReservas() {
-        return reservaDao.cargar();
-    }
-
-    @Override
-    public boolean guardarReserva(Reserva reserva) {
-        return reservaDao.guardar(reserva);
-    }
-
-    @Override
-    public boolean eliminarReserva(String id) {
-        return reservaDao.eliminar(id);
-    }
-
-    @Override
-    public boolean eliminarReservasPorRecursos(List<String> idsRecursos) {
-        return reservaDao.eliminarPorRecursos(idsRecursos);
-    }
-
     @Override
     public boolean guardarRecurso(Recurso recurso) {
         return recursoDao.guardar(recurso);
@@ -149,5 +127,37 @@ public class Service implements ServicioReservas {
     @Override
     public boolean eliminarRecurso(String id) {
         return recursoDao.eliminar(id);
+    }
+
+    // RESERVAS
+
+    @Override
+    public List<Reserva> listarReservas() {
+        return reservaDao.cargar();
+    }
+
+    @Override
+    public boolean guardarReserva(Reserva reserva) {
+        return reservaDao.guardar(reserva);
+    }
+
+    @Override
+    public boolean actualizarReserva(Reserva reserva) {
+        return reservaDao.actualizar(reserva);
+    }
+
+    @Override
+    public boolean eliminarReserva(String id) {
+        return reservaDao.eliminar(id);
+    }
+
+    @Override
+    public boolean eliminarReservasPorRecursos(List<String> idsRecursos) {
+        return reservaDao.eliminarPorRecursos(idsRecursos);
+    }
+
+    @Override
+    public boolean actualizarCategoria(CategoriaRecurso categoria) {
+        return categoriaDao.actualizar(categoria);
     }
 }

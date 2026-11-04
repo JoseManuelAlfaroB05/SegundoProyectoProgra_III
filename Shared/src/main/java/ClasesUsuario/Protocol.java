@@ -18,6 +18,7 @@ public class Protocol {
     public static final int CATEGORIA_READ = 202;
     public static final int CATEGORIA_CREATE = 203;
     public static final int CATEGORIA_DELETE = 204;
+    public static final int CATEGORIA_UPDATE = 205;
 
     // RECURSOS
     public static final int RECURSO_FINDALL = 301;
@@ -31,6 +32,7 @@ public class Protocol {
     public static final int RESERVA_CREATE = 402;
     public static final int RESERVA_DELETE = 403;
     public static final int RESERVA_DELETE_POR_RECURSOS = 404;
+    public static final int RESERVA_UPDATE = 405;
 
     // RESULTADOS
     public static final int ERROR_NO_ERROR = 0;

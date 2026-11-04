@@ -77,6 +77,31 @@ public class ControllerCategoria {
         return null;
     }
 
+    public boolean actualizarCategoria(String id, String descripcion) {
+        if (id == null || descripcion == null) {
+            return false;
+        }
+
+        id = id.trim();
+        descripcion = descripcion.trim();
+
+        if (id.isEmpty() || descripcion.isEmpty()) {
+            return false;
+        }
+
+        CategoriaRecurso categoria =
+                new CategoriaRecurso(id, descripcion);
+
+        boolean resultado = servicio.actualizarCategoria(categoria);
+
+        if (resultado) {
+            cargarCategorias();
+            model.setCurrent(categoria);
+        }
+
+        return resultado;
+    }
+
     public boolean eliminarCategoria(String id) {
         if (id == null || id.trim().isEmpty()) {
             return false;
