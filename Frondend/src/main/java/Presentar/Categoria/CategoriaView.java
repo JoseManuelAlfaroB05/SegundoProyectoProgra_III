@@ -11,6 +11,9 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
+import PDF.PdfGenerator;
+import javax.swing.JFileChooser;
+import java.io.IOException;
 
 public class CategoriaView extends JPanel implements PropertyChangeListener {
     private JPanel PrincipalPanel;
@@ -47,7 +50,7 @@ public class CategoriaView extends JPanel implements PropertyChangeListener {
 
         model.addPropertyChangeListener(this);
 
-        buttonPDF.setEnabled(false);
+        buttonPDF.setEnabled(true);
 
         buttonLimpiar.addActionListener(new ActionListener() {
             @Override
@@ -85,6 +88,13 @@ public class CategoriaView extends JPanel implements PropertyChangeListener {
                             JOptionPane.INFORMATION_MESSAGE
                     );
                 }
+            }
+        });
+
+        buttonPDF.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                generarPDF();
             }
         });
 
@@ -244,6 +254,35 @@ public class CategoriaView extends JPanel implements PropertyChangeListener {
                                 && !categoria.getVarId().isEmpty();
 
                 textFieldId.setEditable(!estaEditando);
+            }
+        }
+    }
+
+    private void generarPDF() {
+        JFileChooser selector = new JFileChooser();
+        selector.setDialogTitle("Guardar registro de categorías");
+        selector.setSelectedFile(new java.io.File("Categorias.pdf"));
+
+        int resultado = selector.showSaveDialog(this);
+
+        if (resultado == JFileChooser.APPROVE_OPTION) {
+            String ruta = selector.getSelectedFile().getAbsolutePath();
+
+            if (!ruta.toLowerCase().endsWith(".pdf")) {
+                ruta += ".pdf";
+            }
+
+            try {
+                PdfGenerator.generarPDFCategorias(ruta, model.getList());
+
+                JOptionPane.showMessageDialog(this,
+                        "PDF de categorías generado correctamente.",
+                        "Reporte", JOptionPane.INFORMATION_MESSAGE);
+
+            } catch (IOException ex) {
+                JOptionPane.showMessageDialog(this,
+                        "No se pudo generar el PDF: " + ex.getMessage(),
+                        "Error", JOptionPane.ERROR_MESSAGE);
             }
         }
     }

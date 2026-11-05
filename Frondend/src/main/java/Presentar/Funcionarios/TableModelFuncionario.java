@@ -1,7 +1,6 @@
 package Presentar.Funcionarios;
 
 import ClasesUsuario.User;
-
 import javax.swing.table.AbstractTableModel;
 import java.util.ArrayList;
 import java.util.List;
@@ -14,11 +13,13 @@ public class TableModelFuncionario extends AbstractTableModel {
     public static final int ID = 0;
     public static final int NOMBRE = 1;
     public static final int TELEFONO = 2;
+    public static final int CLAVE = 3;
 
     private final String[] colNames = {
             "ID",
             "Nombre",
-            "Teléfono"
+            "Teléfono",
+            "Contraseña"
     };
 
     public TableModelFuncionario(int[] cols, List<User> rows) {
@@ -35,7 +36,6 @@ public class TableModelFuncionario extends AbstractTableModel {
         if (fila < 0 || fila >= rows.size()) {
             return null;
         }
-
         return rows.get(fila);
     }
 
@@ -61,13 +61,12 @@ public class TableModelFuncionario extends AbstractTableModel {
         switch (cols[col]) {
             case ID:
                 return funcionario.getVarId();
-
             case NOMBRE:
                 return funcionario.getVarNombre();
-
             case TELEFONO:
                 return funcionario.getVarTelefono();
-
+            case CLAVE:
+                return funcionario.getVarClave();
             default:
                 return "";
         }

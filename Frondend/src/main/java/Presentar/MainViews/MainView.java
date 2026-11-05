@@ -11,6 +11,8 @@ import Presentar.Funcionarios.FuncionariosView;
 import Presentar.Informacion.InformacionView;
 import Presentar.Recursos.RecursosView;
 import Presentar.Reserva.ReservaView;
+import logic.ServiceLocator;
+import java.io.IOException;
 
 import javax.swing.*;
 import java.awt.*;
@@ -50,6 +52,7 @@ public class MainView extends JFrame {
 
         cargarVistas();
         configurarPestanas();
+        configurarNotificaciones();
     }
 
     private void inicializarComponentes() {
@@ -64,39 +67,33 @@ public class MainView extends JFrame {
     }
 
     private void cargarVistas() {
-
-        // 1. Reservas
-        reservaView = new ReservaView(usuarioLogueado);
-        reservaPanel.add(reservaView, BorderLayout.CENTER);
-        tabbedPane.addTab("Reservas", reservaPanel);
-
-        // 2. Calendarización
+        // Pestañas disponibles para ambos roles
         calendarizacionView = new CalendarizacionView();
-        tabbedPane.addTab("Calendarización", calendarizacionView);
+        actividadesView = new ActividadesView();
+        estadisticasView = new EstadisticasView();
+        informacionView = new InformacionView(usuarioLogueado);
 
-        // 3. Recursos
-        recursosView = new RecursosView();
-        tabbedPane.addTab("Recursos", recursosView);
+        tabbedPane.addTab("Calendarización", calendarizacionView);
+        tabbedPane.addTab("Actividades", actividadesView);
+        tabbedPane.addTab("Estadísticas", estadisticasView);
+        tabbedPane.addTab("Información", informacionView);
+
+        // Pestañas exclusivas del funcionario
+        if (usuarioLogueado.getVarRol() == Rol.FUNCIONARIO) {
+            reservaView = new ReservaView(usuarioLogueado);
+            tabbedPane.insertTab("Reservas", null, reservaView, null, 0);
+        }
 
         // Pestañas exclusivas del administrador
         if (usuarioLogueado.getVarRol() == Rol.ADMINISTRADOR) {
-
-            // 4. Categorías
+            recursosView = new RecursosView();
             categoriaView = new CategoriaView();
-            tabbedPane.addTab("Categorías", categoriaView);
-
-            // 5. Funcionarios
             funcionariosView = new FuncionariosView();
-            tabbedPane.addTab("Funcionarios", funcionariosView);
 
-            // 6. Estadísticas
-            estadisticasView = new EstadisticasView();
-            tabbedPane.addTab("Estadísticas", estadisticasView);
+            tabbedPane.insertTab("Recursos", null, recursosView, null, 0);
+            tabbedPane.insertTab("Categorías", null, categoriaView, null, 0);
+            tabbedPane.insertTab("Funcionarios", null, funcionariosView, null, 0);
         }
-
-        // 7. Información
-        informacionView = new InformacionView(usuarioLogueado);
-        tabbedPane.addTab("Información", informacionView);
     }
 
     private void configurarPestanas() {
@@ -143,5 +140,24 @@ public class MainView extends JFrame {
 
     public User getUsuarioLogueado() {
         return usuarioLogueado;
+    }
+
+    private void configurarNotificaciones() {
+        ServiceLocator.getService().setNotificacionListener(
+                mensaje -> SwingUtilities.invokeLater(
+                        () -> informacionView.agregarNotificacion(mensaje)
+                )
+        );
+
+        try {
+            ServiceLocator.getService().conectarNotificaciones(usuarioLogueado);
+        } catch (IOException ex) {
+            JOptionPane.showMessageDialog(
+                    this,
+                    "No fue posible conectar el sistema de notificaciones: " + ex.getMessage(),
+                    "Error de conexión",
+                    JOptionPane.ERROR_MESSAGE
+            );
+        }
     }
 }

@@ -59,9 +59,10 @@ public class EstadisticasView extends JPanel implements PropertyChangeListener {
         JPanel panel = crearPanelPrincipal("Recursos");
 
         JPanel fechas = crearFechas(
-                recursosDesde,
-                recursosHasta,
-                this::cargarRecursos
+                actividadesDesde,
+                actividadesHasta,
+                this::cargarActividades,
+                this::generarPDFActividades
         );
 
         panel.add(fechas, BorderLayout.NORTH);
@@ -93,11 +94,11 @@ public class EstadisticasView extends JPanel implements PropertyChangeListener {
         JPanel panel = crearPanelPrincipal("Actividades");
 
         JPanel fechas = crearFechas(
-                actividadesDesde,
-                actividadesHasta,
-                this::cargarActividades
+                recursosDesde,
+                recursosHasta,
+                this::cargarRecursos,
+                this::generarPDFRecursos
         );
-
         panel.add(fechas, BorderLayout.NORTH);
 
         tablaActividades.setModel(
@@ -133,18 +134,10 @@ public class EstadisticasView extends JPanel implements PropertyChangeListener {
         return panel;
     }
 
-    private JPanel crearFechas(
-            DatePicker desde,
-            DatePicker hasta,
-            Runnable cargar) {
+    private JPanel crearFechas(DatePicker desde, DatePicker hasta, Runnable cargar, Runnable generarPDF) {
 
-        JPanel panel = new JPanel(
-                new FlowLayout(FlowLayout.LEFT, 7, 5)
-        );
-
-        panel.setBorder(
-                BorderFactory.createTitledBorder("Fechas Desde y Hasta")
-        );
+        JPanel panel = new JPanel(new FlowLayout(FlowLayout.LEFT, 7, 5));
+        panel.setBorder(BorderFactory.createTitledBorder("Fechas Desde y Hasta"));
 
         panel.add(new JLabel("Desde"));
         panel.add(desde);
@@ -153,15 +146,11 @@ public class EstadisticasView extends JPanel implements PropertyChangeListener {
         panel.add(hasta);
 
         JButton boton = new JButton("Cargar");
-
         boton.addActionListener(e -> cargar.run());
-
         panel.add(boton);
 
         JButton pdf = new JButton("PDF");
-        pdf.setEnabled(false);
-        pdf.setToolTipText("Generación de PDF pendiente de adaptación.");
-
+        pdf.addActionListener(e -> generarPDF.run());
         panel.add(pdf);
 
         return panel;
@@ -346,6 +335,64 @@ public class EstadisticasView extends JPanel implements PropertyChangeListener {
 
             g.drawLine(left, top, left, bottom);
             g.drawLine(left, bottom, getWidth() - 15, bottom);
+        }
+    }
+
+    private void generarPDFRecursos() {
+
+        if (!rangoValido(recursosDesde, recursosHasta)) {
+            return;
+        }
+
+        JFileChooser selector = new JFileChooser();
+        selector.setDialogTitle("Guardar estadísticas de recursos");
+        selector.setSelectedFile(new java.io.File("EstadisticasRecursos.pdf"));
+
+        if (selector.showSaveDialog(this) == JFileChooser.APPROVE_OPTION) {
+
+            String ruta = selector.getSelectedFile().getAbsolutePath();
+
+            if (!ruta.toLowerCase().endsWith(".pdf")) {
+                ruta += ".pdf";
+            }
+
+            try {
+                controller.generarPDFRecursos(ruta, recursosDesde.getDate(), recursosHasta.getDate());
+
+                JOptionPane.showMessageDialog(this, "PDF de estadísticas de recursos generado correctamente.");
+
+            } catch (Exception ex) {
+                JOptionPane.showMessageDialog(this, "No se pudo generar el PDF.\n" + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+            }
+        }
+    }
+
+    private void generarPDFActividades() {
+
+        if (!rangoValido(actividadesDesde, actividadesHasta)) {
+            return;
+        }
+
+        JFileChooser selector = new JFileChooser();
+        selector.setDialogTitle("Guardar estadísticas de actividades");
+        selector.setSelectedFile(new java.io.File("EstadisticasActividades.pdf"));
+
+        if (selector.showSaveDialog(this) == JFileChooser.APPROVE_OPTION) {
+
+            String ruta = selector.getSelectedFile().getAbsolutePath();
+
+            if (!ruta.toLowerCase().endsWith(".pdf")) {
+                ruta += ".pdf";
+            }
+
+            try {
+                controller.generarPDFActividades(ruta, actividadesDesde.getDate(), actividadesHasta.getDate());
+
+                JOptionPane.showMessageDialog(this, "PDF de estadísticas de actividades generado correctamente.");
+
+            } catch (Exception ex) {
+                JOptionPane.showMessageDialog(this, "No se pudo generar el PDF.\n" + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+            }
         }
     }
 }

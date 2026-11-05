@@ -6,6 +6,7 @@ import ClasesUsuario.Recurso;
 import ClasesUsuario.Reserva;
 import ClasesUsuario.ServicioReservas;
 import logic.ServiceLocator;
+import PDF.PdfGenerator;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -102,9 +103,12 @@ public class ControllerCalendarizacion {
         return false;
     }
 
-    public void generarPDF() throws Exception {
-        throw new UnsupportedOperationException(
-                "La generación de PDF de Calendarización todavía no está adaptada al Proyecto 2."
+    public void generarPDF(String ruta) throws Exception {
+        PdfGenerator.generarPDFCalendarizacion(
+                ruta,
+                model.getFecha(),
+                model.getCategoria(),
+                model.getReservas()
         );
     }
 }

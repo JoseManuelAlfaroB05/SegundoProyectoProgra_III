@@ -23,6 +23,7 @@ public class FuncionariosView extends JPanel implements PropertyChangeListener {
     private JButton botonGuardar;
     private JButton botonEliminar;
     private JButton botonLimpiar;
+    private JButton ButtomPDF;
 
     private ControllerFuncionario controller;
     private TableModelFuncionario tableModel;
@@ -36,11 +37,11 @@ public class FuncionariosView extends JPanel implements PropertyChangeListener {
                 new int[]{
                         TableModelFuncionario.ID,
                         TableModelFuncionario.NOMBRE,
-                        TableModelFuncionario.TELEFONO
+                        TableModelFuncionario.TELEFONO,
+                        TableModelFuncionario.CLAVE
                 },
                 controller.getModel().getList()
         );
-
         tablaFuncionarios.setModel(tableModel);
         tablaFuncionarios.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         tablaFuncionarios.setRowSorter(new TableRowSorter<>(tableModel));
@@ -107,6 +108,11 @@ public class FuncionariosView extends JPanel implements PropertyChangeListener {
         botonGuardar = new JButton("Guardar / Actualizar");
         botonEliminar = new JButton("Eliminar");
         botonLimpiar = new JButton("Limpiar");
+        ButtomPDF = new JButton("Generar PDF");
+
+        gbc.gridx = 5;
+        gbc.weightx = 0;
+        panelBusqueda.add(ButtomPDF, gbc);
 
         GridBagConstraints datos = new GridBagConstraints();
         datos.insets = new Insets(5, 5, 5, 5);
@@ -183,6 +189,8 @@ public class FuncionariosView extends JPanel implements PropertyChangeListener {
         botonEliminar.addActionListener(e -> eliminarFuncionario());
 
         botonLimpiar.addActionListener(e -> limpiarCampos());
+
+        ButtomPDF.addActionListener(e -> generarPDF());
     }
 
     private void configurarSeleccionTabla() {
@@ -358,6 +366,36 @@ public class FuncionariosView extends JPanel implements PropertyChangeListener {
             controller.buscar("", "");
         } catch (RuntimeException ex) {
             mostrarError("No se pudieron recargar los funcionarios.", ex);
+        }
+    }
+
+    private void generarPDF() {
+        JFileChooser selector = new JFileChooser();
+        selector.setDialogTitle("Guardar registro de funcionarios");
+        selector.setSelectedFile(new java.io.File("Funcionarios.pdf"));
+
+        if (selector.showSaveDialog(this) == JFileChooser.APPROVE_OPTION) {
+            String ruta = selector.getSelectedFile().getAbsolutePath();
+
+            if (!ruta.toLowerCase().endsWith(".pdf")) {
+                ruta += ".pdf";
+            }
+
+            try {
+                controller.generarPDF(ruta);
+
+                JOptionPane.showMessageDialog(this,
+                        "PDF de funcionarios generado correctamente.",
+                        "Reporte", JOptionPane.INFORMATION_MESSAGE);
+
+            } catch (Exception ex) {
+            JOptionPane.showMessageDialog(
+                    this,
+                    "No se pudo generar el PDF.\n" + ex.getMessage(),
+                    "Error",
+                    JOptionPane.ERROR_MESSAGE
+            );
+        }
         }
     }
 }

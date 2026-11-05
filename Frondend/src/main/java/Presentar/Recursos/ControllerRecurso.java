@@ -4,6 +4,7 @@ import ClasesUsuario.CategoriaRecurso;
 import ClasesUsuario.Recurso;
 import ClasesUsuario.ServicioReservas;
 import logic.ServiceLocator;
+import PDF.PdfGenerator;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -125,5 +126,9 @@ public class ControllerRecurso {
         throw new UnsupportedOperationException(
                 "La generación de PDF todavía no está adaptada al Proyecto 2."
         );
+    }
+
+    public void generarPDF(String ruta) throws Exception {
+        PdfGenerator.generarPDFRecursos(ruta, servicio.listarRecursos());
     }
 }

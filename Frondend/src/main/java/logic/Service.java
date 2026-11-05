@@ -6,6 +6,7 @@ import ClasesUsuario.Recurso;
 import ClasesUsuario.Reserva;
 import ClasesUsuario.ServicioReservas;
 import ClasesUsuario.User;
+import java.util.function.Consumer;
 
 import java.io.IOException;
 import java.io.ObjectInputStream;
@@ -21,6 +22,15 @@ public class Service implements ServicioReservas {
     private Socket socket;
     private ObjectOutputStream salida;
     private ObjectInputStream entrada;
+    private String sid;
+    // Conexión ASYNC
+    private Socket asyncSocket;
+    private ObjectOutputStream asyncSalida;
+    private ObjectInputStream asyncEntrada;
+    private Thread hiloNotificaciones;
+    // Control de notificaciones
+    private volatile boolean escuchandoNotificaciones;
+    private volatile Consumer<String> notificacionListener;
 
     public Service(String host, int puerto) {
         this.host = host;
@@ -28,8 +38,7 @@ public class Service implements ServicioReservas {
     }
 
     public void conectar() throws IOException {
-        if (socket != null && socket.isConnected()
-                && !socket.isClosed()) {
+        if (socket != null && socket.isConnected() && !socket.isClosed()) {
             return;
         }
 
@@ -41,9 +50,17 @@ public class Service implements ServicioReservas {
 
             entrada = new ObjectInputStream(socket.getInputStream());
 
-        } catch (IOException ex) {
+            // Identificar esta conexión como SYNC.
+            salida.writeInt(Protocol.SYNC);
+            salida.flush();
+
+            // Recibir el identificador de sesión asignado por el Backend.
+            sid = (String) entrada.readObject();
+
+        } catch (IOException | ClassNotFoundException ex) {
             desconectar();
-            throw ex;
+            throw new IOException(
+                    "No fue posible establecer la conexión SYNC: " + ex.getMessage(), ex);
         }
     }
 
@@ -116,6 +133,7 @@ public class Service implements ServicioReservas {
     }
 
     public void desconectar() {
+        cerrarConexionAsync();
         try {
             if (salida != null && socket != null
                     && !socket.isClosed()) {
@@ -158,6 +176,7 @@ public class Service implements ServicioReservas {
         entrada = null;
         salida = null;
         socket = null;
+        sid = null;
     }
 
     // =============== USUARIOS Y FUNCIONARIOS ===============
@@ -316,5 +335,120 @@ public class Service implements ServicioReservas {
     @Override
     public boolean actualizarCategoria(CategoriaRecurso categoria) {
         return ejecutarBooleano(Protocol.CATEGORIA_UPDATE, categoria);
+    }
+
+    public String getSid() {
+        return sid;
+    }
+
+    public void conectarNotificaciones(User usuario) throws IOException {
+        verificarConexion();
+
+        if (sid == null) {
+            throw new IOException("No existe un identificador de sesión.");
+        }
+
+        if (asyncSocket != null && asyncSocket.isConnected()
+                && !asyncSocket.isClosed()) {
+            return;
+        }
+
+        try {
+            asyncSocket = new Socket(host, puerto);
+
+            asyncSalida = new ObjectOutputStream(asyncSocket.getOutputStream());
+            asyncSalida.flush();
+
+            asyncEntrada = new ObjectInputStream(asyncSocket.getInputStream());
+
+            // Identificar la conexión como ASYNC.
+            asyncSalida.writeInt(Protocol.ASYNC);
+
+            // Enviar los datos para asociar la conexión con su Worker.
+            asyncSalida.writeObject(sid);
+            asyncSalida.writeObject(usuario);
+
+            asyncSalida.flush();
+            asyncSalida.reset();
+
+            escucharNotificaciones();
+
+        } catch (IOException ex) {
+            cerrarConexionAsync();
+            throw new IOException(
+                    "No fue posible establecer la conexión ASYNC: " + ex.getMessage(), ex);
+        }
+    }
+
+    private void escucharNotificaciones() {
+        escuchandoNotificaciones = true;
+
+        hiloNotificaciones = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    while (escuchandoNotificaciones) {
+                        int operacion = asyncEntrada.readInt();
+
+                        if (operacion == Protocol.DELIVER_NOTIFICACION) {
+                            String mensaje = (String) asyncEntrada.readObject();
+
+                            Consumer<String> listener = notificacionListener;
+
+                            if (listener != null) {
+                                listener.accept(mensaje);
+                            }
+                        }
+                    }
+
+                } catch (IOException | ClassNotFoundException ex) {
+                    if (escuchandoNotificaciones) {
+                        System.err.println(
+                                "Se perdió la conexión de notificaciones: " + ex.getMessage());
+                    }
+                } finally {
+                    escuchandoNotificaciones = false;
+                }
+            }
+        });
+
+        hiloNotificaciones.setDaemon(true);
+        hiloNotificaciones.start();
+    }
+    public void setNotificacionListener(Consumer<String> listener) {
+        this.notificacionListener = listener;
+    }
+
+    private void cerrarConexionAsync() {
+        escuchandoNotificaciones = false;
+
+        try {
+            if (asyncSocket != null && !asyncSocket.isClosed()) {
+                asyncSocket.close();
+            }
+        } catch (IOException ex) {
+            System.err.println("Error al cerrar el socket ASYNC: " + ex.getMessage());
+        }
+
+        try {
+            if (asyncEntrada != null) {
+                asyncEntrada.close();
+            }
+        } catch (IOException ex) {
+            System.err.println("Error al cerrar la entrada ASYNC: " + ex.getMessage());
+        }
+
+        try {
+            if (asyncSalida != null) {
+                asyncSalida.close();
+            }
+        } catch (IOException ex) {
+            System.err.println("Error al cerrar la salida ASYNC: " + ex.getMessage());
+        }
+
+        asyncSocket = null;
+        asyncEntrada = null;
+        asyncSalida = null;
+        hiloNotificaciones = null;
     }
 }

@@ -2,7 +2,7 @@ package Presentar.Funcionarios;
 
 import ClasesUsuario.Rol;
 import ClasesUsuario.User;
-//import Service.PDFService;
+import PDF.PdfGenerator;
 import logic.ServiceLocator;
 
 import java.io.IOException;
@@ -141,9 +141,11 @@ public class ControllerFuncionario {
         );
     }
 
-//    public void generarPDF() throws Exception {
-//        PDFService.generarPDFFuncionarios(model.getList());
-//    }
+    public void generarPDF(String ruta) throws Exception {
+        asegurarConexion();
+        List<User> funcionarios = ServiceLocator.getService().buscarFuncionarios("", "");
+        PdfGenerator.generarPDFFuncionarios(ruta, funcionarios);
+    }
 
     private boolean telefonoValido(String telefono) {
         return telefono != null && telefono.matches("[0-9]+");

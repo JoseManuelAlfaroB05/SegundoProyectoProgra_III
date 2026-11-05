@@ -58,20 +58,29 @@ public class ControllerLogin {
 
     public boolean cambiarClave(String id, String claveActual, String claveNueva) {
         try {
+            // Establecer conexión con el Backend
+            ServiceLocator.conectar();
+
+            // Buscar el usuario
             User usuario = ServiceLocator.getService()
                     .buscarUsuarioPorId(id);
 
-            if (usuario == null ||
-                    !usuario.getVarClave().equals(claveActual)) {
+            // Comprobar la contraseña actual
+            if (usuario == null || !usuario.getVarClave().equals(claveActual)) {
                 return false;
             }
 
+            // Actualizar la contraseña
             return ServiceLocator.getService()
                     .actualizarClave(id, claveNueva);
 
         } catch (Exception ex) {
+            ex.printStackTrace();
+
             throw new IllegalStateException(
-                    "No fue posible cambiar la clave mediante el Backend.", ex);
+                    "No fue posible cambiar la clave mediante el Backend: "
+                            + ex.getMessage(), ex);
         }
     }
+
 }

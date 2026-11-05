@@ -1,3 +1,4 @@
+
 package Presentar.Actividades;
 
 import com.github.lgooddatepicker.components.DatePicker;
@@ -8,16 +9,21 @@ import java.time.LocalDate;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 
+import PDF.PdfGenerator;
+
 public class ActividadesView extends JPanel
         implements PropertyChangeListener {
 
-    private DatePicker fechaReferencia = new DatePicker();;
+    private DatePicker fechaReferencia = new DatePicker();
     private JTable tabla = new JTable();
+
     private final ControllerActividades controller =
             new ControllerActividades();
+
     private final ModelActividades model = controller.getModel();
 
     public ActividadesView() {
+
         setLayout(new BorderLayout(10, 10));
         setBorder(BorderFactory.createEmptyBorder(16, 24, 16, 24));
 
@@ -32,11 +38,13 @@ public class ActividadesView extends JPanel
     }
 
     private JPanel crearFiltro() {
+
         JPanel panel = new JPanel(
                 new FlowLayout(FlowLayout.CENTER, 10, 8)
         );
 
         panel.setBorder(BorderFactory.createTitledBorder("Semana"));
+
         panel.add(new JLabel("Fecha de referencia"));
         panel.add(fechaReferencia);
 
@@ -45,14 +53,17 @@ public class ActividadesView extends JPanel
         panel.add(cargar);
 
         JButton pdf = new JButton("PDF");
-        pdf.setEnabled(false);
-        pdf.setToolTipText("Generación de PDF pendiente");
+        pdf.setEnabled(true);
+        pdf.setToolTipText("Generar PDF del calendario semanal");
+        pdf.addActionListener(e -> generarPDF());
+
         panel.add(pdf);
 
         return panel;
     }
 
     private JScrollPane crearTabla() {
+
         tabla.setRowHeight(54);
         tabla.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
         tabla.setGridColor(new Color(180, 180, 180));
@@ -61,6 +72,7 @@ public class ActividadesView extends JPanel
     }
 
     private void cargarSemana() {
+
         LocalDate fecha = fechaReferencia.getDate();
 
         if (fecha == null) {
@@ -75,7 +87,9 @@ public class ActividadesView extends JPanel
 
         try {
             controller.cargarSemana(fecha);
+
         } catch (RuntimeException ex) {
+
             JOptionPane.showMessageDialog(
                     this,
                     "No fue posible cargar las actividades. "
@@ -87,9 +101,12 @@ public class ActividadesView extends JPanel
     }
 
     public void recargarDatos() {
+
         try {
             controller.cargarSemana(fechaReferencia.getDate());
+
         } catch (RuntimeException ex) {
+
             JOptionPane.showMessageDialog(
                     this,
                     "No fue posible actualizar las actividades.",
@@ -99,7 +116,71 @@ public class ActividadesView extends JPanel
         }
     }
 
+    private void generarPDF() {
+
+        LocalDate lunes = model.getLunes();
+
+        if (lunes == null) {
+            JOptionPane.showMessageDialog(
+                    this,
+                    "Primero debe cargar una semana.",
+                    "Actividades",
+                    JOptionPane.WARNING_MESSAGE
+            );
+            return;
+        }
+
+        JFileChooser selector = new JFileChooser();
+
+        selector.setDialogTitle(
+                "Guardar calendario de actividades"
+        );
+
+        selector.setSelectedFile(
+                new java.io.File("Calendario de actividades.pdf")
+        );
+
+        int resultado = selector.showSaveDialog(this);
+
+        if (resultado == JFileChooser.APPROVE_OPTION) {
+
+            java.io.File archivo = selector.getSelectedFile();
+
+            String ruta = archivo.getAbsolutePath();
+
+            if (!ruta.toLowerCase().endsWith(".pdf")) {
+                ruta += ".pdf";
+            }
+
+            try {
+
+                PdfGenerator.generarPDFActividades(
+                        ruta,
+                        lunes,
+                        model.getReservas()
+                );
+
+                JOptionPane.showMessageDialog(
+                        this,
+                        "El PDF se generó correctamente.",
+                        "Calendario de actividades",
+                        JOptionPane.INFORMATION_MESSAGE
+                );
+
+            } catch (Exception ex) {
+
+                JOptionPane.showMessageDialog(
+                        this,
+                        "Error al generar el PDF: " + ex.getMessage(),
+                        "Error",
+                        JOptionPane.ERROR_MESSAGE
+                );
+            }
+        }
+    }
+
     private void actualizarTabla() {
+
         tabla.setModel(new TableModelActividades(model));
 
         tabla.getColumnModel()
@@ -107,6 +188,7 @@ public class ActividadesView extends JPanel
                 .setPreferredWidth(70);
 
         for (int i = 1; i < 8; i++) {
+
             tabla.getColumnModel()
                     .getColumn(i)
                     .setPreferredWidth(145);
@@ -115,6 +197,7 @@ public class ActividadesView extends JPanel
 
     @Override
     public void propertyChange(PropertyChangeEvent evt) {
+
         if (ModelActividades.SEMANA.equals(evt.getPropertyName())) {
             actualizarTabla();
         }

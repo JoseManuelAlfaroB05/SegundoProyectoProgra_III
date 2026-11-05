@@ -13,6 +13,7 @@ import java.beans.PropertyChangeListener;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
+import java.io.File;
 
 public class CalendarizacionView extends JPanel implements PropertyChangeListener {
 
@@ -62,21 +63,9 @@ public class CalendarizacionView extends JPanel implements PropertyChangeListene
         buttonPDF.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                try {
-                    controller.generarPDF();
-                } catch (Exception ex) {
-                    JOptionPane.showMessageDialog(
-                            CalendarizacionView.this,
-                            ex.getMessage() != null
-                                    ? ex.getMessage()
-                                    : "No se pudo generar el PDF.",
-                            "Error",
-                            JOptionPane.ERROR_MESSAGE
-                    );
-                }
+                generarPDF();
             }
-        });
-    }
+        });    }
 
     private void configurarComboBox() {
 
@@ -146,6 +135,60 @@ public class CalendarizacionView extends JPanel implements PropertyChangeListene
 
     public CategoriaRecurso getCategoria() {
         return (CategoriaRecurso) comboBox1.getSelectedItem();
+    }
+
+    private void generarPDF() {
+
+        if (getFecha() == null) {
+            JOptionPane.showMessageDialog(
+                    this,
+                    "Debe seleccionar una fecha.",
+                    "Aviso",
+                    JOptionPane.WARNING_MESSAGE
+            );
+            return;
+        }
+
+        JFileChooser selector = new JFileChooser();
+        selector.setDialogTitle("Guardar PDF de Calendarización");
+        selector.setSelectedFile(
+                new File("Calendarizacion.pdf")
+        );
+
+        int resultado = selector.showSaveDialog(this);
+
+        if (resultado != JFileChooser.APPROVE_OPTION) {
+            return;
+        }
+
+        File archivo = selector.getSelectedFile();
+
+        String ruta = archivo.getAbsolutePath();
+
+        if (!ruta.toLowerCase().endsWith(".pdf")) {
+            ruta += ".pdf";
+        }
+
+        try {
+            controller.generarPDF(ruta);
+
+            JOptionPane.showMessageDialog(
+                    this,
+                    "El PDF se generó correctamente.",
+                    "PDF generado",
+                    JOptionPane.INFORMATION_MESSAGE
+            );
+
+        } catch (Exception ex) {
+            JOptionPane.showMessageDialog(
+                    this,
+                    ex.getMessage() != null
+                            ? ex.getMessage()
+                            : "No se pudo generar el PDF.",
+                    "Error",
+                    JOptionPane.ERROR_MESSAGE
+            );
+        }
     }
 
     @Override

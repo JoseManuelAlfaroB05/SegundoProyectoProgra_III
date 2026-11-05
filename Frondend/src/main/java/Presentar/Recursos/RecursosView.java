@@ -79,12 +79,27 @@ public class RecursosView extends JPanel implements PropertyChangeListener {
         pdf.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                try {
-                    controller.generarPDF();
-                } catch (Exception ex) {
-                    mostrarError(ex.getMessage() == null
-                            ? "No se pudo generar el PDF."
-                            : ex.getMessage());
+                JFileChooser selector = new JFileChooser();
+                selector.setDialogTitle("Guardar registro de recursos");
+                selector.setSelectedFile(new java.io.File("Recursos.pdf"));
+
+                if (selector.showSaveDialog(RecursosView.this) == JFileChooser.APPROVE_OPTION) {
+                    String ruta = selector.getSelectedFile().getAbsolutePath();
+
+                    if (!ruta.toLowerCase().endsWith(".pdf")) {
+                        ruta += ".pdf";
+                    }
+
+                    try {
+                        controller.generarPDF(ruta);
+                        JOptionPane.showMessageDialog(RecursosView.this,
+                                "PDF de recursos generado correctamente.",
+                                "Reporte", JOptionPane.INFORMATION_MESSAGE);
+                    } catch (Exception ex) {
+                        mostrarError(ex.getMessage() == null
+                                ? "No se pudo generar el PDF."
+                                : ex.getMessage());
+                    }
                 }
             }
         });

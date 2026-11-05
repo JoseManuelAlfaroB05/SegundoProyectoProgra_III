@@ -1,3 +1,4 @@
+
 package Server;
 
 import ClasesUsuario.CategoriaRecurso;
@@ -14,26 +15,33 @@ import java.net.Socket;
 import java.util.List;
 
 public class Worker {
+
     private Socket s;
     private ObjectOutputStream os;
     private ObjectInputStream is;
-    private boolean continuar;
+    private volatile boolean continuar;
     private Thread hilo;
     private final Service service;
+    private final Server server;
+    private final String sid;
 
-    public Worker(Socket s, Service service) {
-        try {
-            this.s = s;
-            this.service = service;
+    // Conexión asíncrona
+    private Socket asyncSocket;
+    private ObjectOutputStream asyncOs;
+    private ObjectInputStream asyncIs;
 
-            os = new ObjectOutputStream(s.getOutputStream());
-            os.flush();
+    // Usuario que inició sesión
+    private volatile User usuario;
 
-            is = new ObjectInputStream(s.getInputStream());
+    public Worker(Server server, Socket s, ObjectOutputStream os,
+                  ObjectInputStream is, String sid, Service service) {
 
-        } catch (IOException ex) {
-            throw new RuntimeException("Error al crear el Worker: " + ex.getMessage(), ex);
-        }
+        this.server = server;
+        this.s = s;
+        this.os = os;
+        this.is = is;
+        this.sid = sid;
+        this.service = service;
     }
 
     public void start() {
@@ -45,26 +53,21 @@ public class Worker {
                 listen();
             }
         });
+
         hilo.start();
     }
 
     public void stop() {
         continuar = false;
 
-        try {
-            if (s != null && !s.isClosed()) {
-                s.close();
-            }
-        } catch (IOException ex) {
-            System.err.println(
-                    "Error al cerrar la conexión: " + ex.getMessage());
-        }
+        cerrarSocket(s);
+        cerrarSocket(asyncSocket);
 
-        System.out.println("Conexión cerrada...");
+        System.out.println("Conexión cerrada: " + sid);
     }
 
     public void listen() {
-        System.out.println("Worker atendiendo peticiones...");
+        System.out.println("Worker atendiendo peticiones: " + sid);
 
         try {
             while (continuar) {
@@ -74,6 +77,7 @@ public class Worker {
 
                 try {
                     procesarOperacion(operacion);
+
                     os.flush();
                     os.reset();
 
@@ -100,50 +104,32 @@ public class Worker {
 
         } catch (IOException ex) {
             if (continuar) {
-                System.out.println("El cliente se desconectó.");
+                System.out.println("El cliente se desconectó: " + sid);
             }
 
         } finally {
             continuar = false;
 
-            try {
-                if (is != null) {
-                    is.close();
-                }
-            } catch (IOException ex) {
-                System.err.println(
-                        "Error al cerrar la entrada: " + ex.getMessage());
-            }
+            cerrarStreams();
+            cerrarSocket(s);
+            cerrarStreamsAsync();
+            cerrarSocket(asyncSocket);
 
-            try {
-                if (os != null) {
-                    os.close();
-                }
-            } catch (IOException ex) {
-                System.err.println(
-                        "Error al cerrar la salida: " + ex.getMessage());
-            }
+            server.eliminarWorker(this);
 
-            try {
-                if (s != null && !s.isClosed()) {
-                    s.close();
-                }
-            } catch (IOException ex) {
-                System.err.println(
-                        "Error al cerrar el socket: " + ex.getMessage());
-            }
-
-            System.out.println("Conexión cerrada...");
+            System.out.println("Worker finalizado: " + sid);
         }
     }
 
     private void procesarOperacion(int operacion) throws Exception {
+
         switch (operacion) {
 
             // USUARIOS
 
             case Protocol.USUARIO_FINDALL: {
                 List<User> usuarios = service.listarUsuarios();
+
                 os.writeInt(Protocol.ERROR_NO_ERROR);
                 os.writeObject(usuarios);
                 break;
@@ -151,11 +137,11 @@ public class Worker {
 
             case Protocol.USUARIO_READ: {
                 String id = (String) is.readObject();
-                User usuario = service.buscarUsuarioPorId(id);
+                User usuarioEncontrado = service.buscarUsuarioPorId(id);
 
-                if (usuario != null) {
+                if (usuarioEncontrado != null) {
                     os.writeInt(Protocol.ERROR_NO_ERROR);
-                    os.writeObject(usuario);
+                    os.writeObject(usuarioEncontrado);
                 } else {
                     os.writeInt(Protocol.ERROR_ERROR);
                 }
@@ -163,18 +149,22 @@ public class Worker {
             }
 
             case Protocol.USUARIO_CREATE: {
-                User usuario = (User) is.readObject();
-                boolean resultado =
-                        service.guardarFuncionario(usuario);
+                User usuarioCreado = (User) is.readObject();
+
+                boolean resultado = service.guardarFuncionario(usuarioCreado);
 
                 escribirResultado(resultado);
+
+                if (resultado) {
+                    notificarAccion("registró un funcionario");
+                }
                 break;
             }
 
             case Protocol.USUARIO_UPDATE: {
-                User usuario = (User) is.readObject();
-                boolean resultado =
-                        service.actualizarFuncionario(usuario);
+                User usuarioActualizado = (User) is.readObject();
+
+                boolean resultado = service.actualizarFuncionario(usuarioActualizado);
 
                 escribirResultado(resultado);
                 break;
@@ -182,8 +172,8 @@ public class Worker {
 
             case Protocol.USUARIO_DELETE: {
                 String id = (String) is.readObject();
-                boolean resultado =
-                        service.eliminarFuncionario(id);
+
+                boolean resultado = service.eliminarFuncionario(id);
 
                 escribirResultado(resultado);
                 break;
@@ -193,8 +183,7 @@ public class Worker {
                 String id = (String) is.readObject();
                 String claveNueva = (String) is.readObject();
 
-                boolean resultado =
-                        service.actualizarClave(id, claveNueva);
+                boolean resultado = service.actualizarClave(id, claveNueva);
 
                 escribirResultado(resultado);
                 break;
@@ -204,8 +193,7 @@ public class Worker {
                 String id = (String) is.readObject();
                 String nombre = (String) is.readObject();
 
-                List<User> funcionarios =
-                        service.buscarFuncionarios(id, nombre);
+                List<User> funcionarios = service.buscarFuncionarios(id, nombre);
 
                 os.writeInt(Protocol.ERROR_NO_ERROR);
                 os.writeObject(funcionarios);
@@ -215,30 +203,17 @@ public class Worker {
             // CATEGORÍAS
 
             case Protocol.CATEGORIA_FINDALL: {
-                List<CategoriaRecurso> categorias =
-                        service.listarCategorias();
+                List<CategoriaRecurso> categorias = service.listarCategorias();
 
                 os.writeInt(Protocol.ERROR_NO_ERROR);
                 os.writeObject(categorias);
                 break;
             }
 
-            case Protocol.CATEGORIA_UPDATE: {
-                CategoriaRecurso categoria =
-                        (CategoriaRecurso) is.readObject();
-
-                boolean resultado =
-                        service.actualizarCategoria(categoria);
-
-                escribirResultado(resultado);
-                break;
-            }
-
             case Protocol.CATEGORIA_READ: {
                 String id = (String) is.readObject();
 
-                CategoriaRecurso categoria =
-                        service.buscarCategoriaPorId(id);
+                CategoriaRecurso categoria = service.buscarCategoriaPorId(id);
 
                 if (categoria != null) {
                     os.writeInt(Protocol.ERROR_NO_ERROR);
@@ -250,11 +225,22 @@ public class Worker {
             }
 
             case Protocol.CATEGORIA_CREATE: {
-                CategoriaRecurso categoria =
-                        (CategoriaRecurso) is.readObject();
+                CategoriaRecurso categoria = (CategoriaRecurso) is.readObject();
 
-                boolean resultado =
-                        service.guardarCategoria(categoria);
+                boolean resultado = service.guardarCategoria(categoria);
+
+                escribirResultado(resultado);
+
+                if (resultado) {
+                    notificarAccion("creó una categoría");
+                }
+                break;
+            }
+
+            case Protocol.CATEGORIA_UPDATE: {
+                CategoriaRecurso categoria = (CategoriaRecurso) is.readObject();
+
+                boolean resultado = service.actualizarCategoria(categoria);
 
                 escribirResultado(resultado);
                 break;
@@ -263,8 +249,7 @@ public class Worker {
             case Protocol.CATEGORIA_DELETE: {
                 String id = (String) is.readObject();
 
-                boolean resultado =
-                        service.eliminarCategoria(id);
+                boolean resultado = service.eliminarCategoria(id);
 
                 escribirResultado(resultado);
                 break;
@@ -296,24 +281,35 @@ public class Worker {
 
             case Protocol.RECURSO_CREATE: {
                 Recurso recurso = (Recurso) is.readObject();
+
                 boolean resultado = service.guardarRecurso(recurso);
+
                 escribirResultado(resultado);
+
+                if (resultado) {
+                    notificarAccion("registró un recurso");
+                }
                 break;
             }
 
             case Protocol.RECURSO_UPDATE: {
                 Recurso recurso = (Recurso) is.readObject();
+
                 boolean resultado = service.actualizarRecurso(recurso);
+
                 escribirResultado(resultado);
                 break;
             }
 
             case Protocol.RECURSO_DELETE: {
                 String id = (String) is.readObject();
+
                 boolean resultado = service.eliminarRecurso(id);
+
                 escribirResultado(resultado);
                 break;
             }
+
             // RESERVAS
 
             case Protocol.RESERVA_FINDALL: {
@@ -321,6 +317,19 @@ public class Worker {
 
                 os.writeInt(Protocol.ERROR_NO_ERROR);
                 os.writeObject(reservas);
+                break;
+            }
+
+            case Protocol.RESERVA_CREATE: {
+                Reserva reserva = (Reserva) is.readObject();
+
+                boolean resultado = service.guardarReserva(reserva);
+
+                escribirResultado(resultado);
+
+                if (resultado) {
+                    notificarAccion("creó una reserva");
+                }
                 break;
             }
 
@@ -333,21 +342,10 @@ public class Worker {
                 break;
             }
 
-            case Protocol.RESERVA_CREATE: {
-                Reserva reserva = (Reserva) is.readObject();
-
-                boolean resultado =
-                        service.guardarReserva(reserva);
-
-                escribirResultado(resultado);
-                break;
-            }
-
             case Protocol.RESERVA_DELETE: {
                 String id = (String) is.readObject();
 
-                boolean resultado =
-                        service.eliminarReserva(id);
+                boolean resultado = service.eliminarReserva(id);
 
                 escribirResultado(resultado);
                 break;
@@ -355,11 +353,9 @@ public class Worker {
 
             case Protocol.RESERVA_DELETE_POR_RECURSOS: {
                 @SuppressWarnings("unchecked")
-                List<String> idsRecursos =
-                        (List<String>) is.readObject();
+                List<String> idsRecursos = (List<String>) is.readObject();
 
-                boolean resultado =
-                        service.eliminarReservasPorRecursos(idsRecursos);
+                boolean resultado = service.eliminarReservasPorRecursos(idsRecursos);
 
                 escribirResultado(resultado);
                 break;
@@ -373,8 +369,7 @@ public class Worker {
             }
 
             default: {
-                System.err.println(
-                        "Operación desconocida: " + operacion);
+                System.err.println("Operación desconocida: " + operacion);
 
                 os.writeInt(Protocol.ERROR_ERROR);
                 break;
@@ -382,12 +377,109 @@ public class Worker {
         }
     }
 
-    private void escribirResultado(boolean resultado)
-            throws IOException {
+    private void escribirResultado(boolean resultado) throws IOException {
         if (resultado) {
             os.writeInt(Protocol.ERROR_NO_ERROR);
         } else {
             os.writeInt(Protocol.ERROR_ERROR);
+        }
+    }
+
+    // =============== NOTIFICACIONES ===============
+
+    public String getSid() {
+        return sid;
+    }
+
+    public synchronized void setAsync(Socket asyncSocket,
+                                      ObjectOutputStream asyncOs,
+                                      ObjectInputStream asyncIs,
+                                      User usuario) {
+
+        this.asyncSocket = asyncSocket;
+        this.asyncOs = asyncOs;
+        this.asyncIs = asyncIs;
+        this.usuario = usuario;
+    }
+
+    public synchronized void enviarNotificacion(String mensaje) {
+        try {
+            if (asyncSocket != null && !asyncSocket.isClosed()
+                    && asyncOs != null) {
+
+                asyncOs.writeInt(Protocol.DELIVER_NOTIFICACION);
+                asyncOs.writeObject(mensaje);
+                asyncOs.flush();
+                asyncOs.reset();
+            }
+
+        } catch (IOException ex) {
+            System.err.println(
+                    "Error al enviar notificación a " + sid + ": " + ex.getMessage());
+        }
+    }
+
+    private void notificarAccion(String accion) {
+        if (usuario == null) {
+            return;
+        }
+
+        String nombre = usuario.getVarNombre();
+
+        if (nombre == null || nombre.trim().isEmpty()) {
+            nombre = usuario.getVarId();
+        }
+
+        String mensaje = nombre + " " + accion + ".";
+
+        server.notificarTodos(mensaje);
+    }
+
+    // =============== CIERRE DE CONEXIONES ===============
+
+    private void cerrarStreams() {
+        try {
+            if (is != null) {
+                is.close();
+            }
+        } catch (IOException ex) {
+            System.err.println("Error al cerrar entrada SYNC: " + ex.getMessage());
+        }
+
+        try {
+            if (os != null) {
+                os.close();
+            }
+        } catch (IOException ex) {
+            System.err.println("Error al cerrar salida SYNC: " + ex.getMessage());
+        }
+    }
+
+    private void cerrarStreamsAsync() {
+        try {
+            if (asyncIs != null) {
+                asyncIs.close();
+            }
+        } catch (IOException ex) {
+            System.err.println("Error al cerrar entrada ASYNC: " + ex.getMessage());
+        }
+
+        try {
+            if (asyncOs != null) {
+                asyncOs.close();
+            }
+        } catch (IOException ex) {
+            System.err.println("Error al cerrar salida ASYNC: " + ex.getMessage());
+        }
+    }
+
+    private void cerrarSocket(Socket socket) {
+        try {
+            if (socket != null && !socket.isClosed()) {
+                socket.close();
+            }
+        } catch (IOException ex) {
+            System.err.println("Error al cerrar socket: " + ex.getMessage());
         }
     }
 }

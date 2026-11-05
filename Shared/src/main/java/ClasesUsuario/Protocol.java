@@ -40,4 +40,11 @@ public class Protocol {
 
     // CONEXIÓN
     public static final int DISCONNECT = 99;
+
+    // =============== TIPO DE CONEXIÓN ===============
+    public static final int SYNC = 1;
+    public static final int ASYNC = 2;
+
+    // =============== NOTIFICACIONES ===============
+    public static final int DELIVER_NOTIFICACION = 501;
 }
